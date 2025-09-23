@@ -1,47 +1,36 @@
-# Text Sentiment Analyzer (Local)
+What it does 
 
-A **simple local** Gradio app that classifies text sentiment using a Hugging Face Transformers pipeline
-(`distilbert-base-uncased-finetuned-sst-2-english`). No remote APIs.
+Classifies short text as POSITIVE, NEGATIVE, or NEUTRAL
 
-## Quickstart
+Runs locally (CPU by default) – no external API calls after the first model download
 
-```bash
-python -m venv .venv && source .venv/bin/activate   # Windows: .venv\Scripts\activate
+Simple web UI (Gradio) + clean Python module you can import in other code
+
+Unit tests with pytest and GitHub Actions that run on every push/PR
+
+
+
+python -m pip install --upgrade pip
+
 pip install -r requirements.txt
-python app.py
-```
 
-Open the printed local URL and paste any text. Use the **Neutral margin** slider to make the
-classifier return **NEUTRAL** when POS vs NEG is too close to call.
 
-## Why this fits Deliverable 2
+Project structure
 
-- **Runs locally** on your hardware (no `InferenceClient`, no external API).
-- Clear contrast vs. your API-based product from Deliverable 1.
-- Includes **tests** and a **GitHub Action** that runs `pytest` on push/PR.
+.
 
-## Project layout
+├─ app.py                 # Gradio app (UI)
 
-```
-sentiment_local/
-├─ app.py
-├─ sentiment.py
-├─ requirements.txt
-├─ README.md
+├─ sentiment.py           # Model loading + batch analysis helpers
+
+├─ requirements.txt       # Python dependencies
+
+├─ pytest.ini             # pytest config
+
 ├─ tests/
-│  └─ test_sentiment.py
-└─ .github/workflows/
-   └─ ci.yml
-```
 
-## Notes
+│  ├─ test_imports.py     # sanity checks
 
-- On the first run, Transformers will **download the model weights** to your machine
-  (cached under `~/.cache/huggingface/`). Subsequent runs are fully local.
-- If you need strictly offline installs, pre-download the model:
-  ```bash
-  python -c "from transformers import AutoTokenizer, AutoModelForSequenceClassification; \
-             AutoTokenizer.from_pretrained('distilbert-base-uncased-finetuned-sst-2-english'); \
-             AutoModelForSequenceClassification.from_pretrained('distilbert-base-uncased-finetuned-sst-2-english')"
-  ```
-push-trigger-test
+│  └─ test_sentiment.py   # simple positive/negative assertions
+
+└─ .github/workflows/ci.yml   # GitHub Actions: install + run tests
