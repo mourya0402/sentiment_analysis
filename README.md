@@ -44,3 +44,4 @@ sentiment_local/
              AutoTokenizer.from_pretrained('distilbert-base-uncased-finetuned-sst-2-english'); \
              AutoModelForSequenceClassification.from_pretrained('distilbert-base-uncased-finetuned-sst-2-english')"
   ```
+push-trigger-test
