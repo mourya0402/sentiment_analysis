@@ -1,4 +1,5 @@
 import time
+import os
 import gradio as gr
 from sentiment import analyze_batch, load_pipeline
 
@@ -71,4 +72,12 @@ with gr.Blocks() as demo:
     btn.click(predict, inputs=[inp, neutral_margin], outputs=[out_json, out_md])
 
 if __name__ == "__main__":
-    demo.launch()
+    # Default to 7860 in the container, but allow override via env
+    port = int(os.getenv("PORT", os.getenv("GRADIO_SERVER_PORT", "7860")))
+    # queue helps avoid race conditions if multiple calls arrive together
+    demo.queue(concurrency_count=2).launch(
+        server_name="0.0.0.0",
+        server_port=port,
+        show_error=True
+    )
+
