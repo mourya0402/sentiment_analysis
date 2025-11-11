@@ -72,8 +72,10 @@ if __name__ == "__main__":
     threading.Thread(target=start_http_server, args=(8000,), daemon=True).start()
 
     port = int(os.getenv("PORT", os.getenv("GRADIO_SERVER_PORT", "7860")))
-    demo.queue(concurrency_count=2).launch(
+    demo.launch(
         server_name="0.0.0.0",
         server_port=port,
-        show_error=True
-    )
+        show_error=True,
+        concurrency_limit=2
+   )
+
