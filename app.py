@@ -1,4 +1,3 @@
-# ... imports ...
 from prometheus_client import Counter, Gauge, Histogram, start_http_server
 import threading
 import time
@@ -12,7 +11,12 @@ try:
 except Exception:
     psutil = None
 
-# (unchanged INTRO / globals ...)
+INTRO = """
+# Text Sentiment Analyzer (Local)
+Runs **fully local** using a Hugging Face Transformers pipeline—no external APIs.
+Default model: `distilbert-base-uncased-finetuned-sst-2-english`.
+"""
+
 pipe = None
 _is_warm = False
 
@@ -44,10 +48,12 @@ def predict(text, neutral_margin):
     if psutil is not None:
         try:
             p = psutil.Process()
-            CPU_USAGE.set(p.cpu_percent(interval=0.0))
-            MEM_USAGE.set(p.memory_info().rss / (1024 ** 2))
-            metrics.append(f"CPU: {p.cpu_percent(interval=0.0):.1f}%")
-            metrics.append(f"RSS: {p.memory_info().rss / (1024 ** 2):.1f} MB")
+            cpu_now = p.cpu_percent(interval=0.0)
+            mem_now = p.memory_info().rss / (1024 ** 2)
+            CPU_USAGE.set(cpu_now)
+            MEM_USAGE.set(mem_now)
+            metrics.append(f"CPU: {cpu_now:.1f}%")
+            metrics.append(f"RSS: {mem_now:.1f} MB")
         except Exception:
             pass
     else:
@@ -63,19 +69,28 @@ def predict(text, neutral_margin):
     _is_warm = True
     return results, "\n".join(pretty_lines)
 
+# --- UI Layout ---
 with gr.Blocks() as demo:
-    # ... your UI code unchanged ...
-    pass  # keep your existing Blocks code here
+    gr.Markdown(INTRO)
+    with gr.Row():
+        with gr.Column():
+            inp = gr.Textbox(label="Input text", placeholder="Paste a review, tweet, etc.", lines=6)
+            neutral_margin = gr.Slider(0.0, 0.5, value=0.15, step=0.01,
+                                       label="Neutral margin (wider margin ⇒ more NEUTRAL)")
+            btn = gr.Button("Analyze", variant="primary")
+        with gr.Column():
+            out_json = gr.JSON(label="Raw output")
+            out_md = gr.Markdown(label="Friendly view")
+    btn.click(predict, inputs=[inp, neutral_margin], outputs=[out_json, out_md])
 
+# --- Main entry ---
 if __name__ == "__main__":
-    # start prometheus metrics server on port 8000 in background
+    # Start Prometheus metrics server in background
     threading.Thread(target=start_http_server, args=(8000,), daemon=True).start()
 
     port = int(os.getenv("PORT", os.getenv("GRADIO_SERVER_PORT", "7860")))
     demo.launch(
         server_name="0.0.0.0",
         server_port=port,
-        show_error=True,
-        concurrency_limit=2
-   )
-
+        show_error=True
+    )
