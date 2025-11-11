@@ -1,25 +1,24 @@
-# Small, stable Python base
 FROM python:3.11-slim
 
-# System utilities (optional, but helps with clean signal handling)
-RUN apt-get update && apt-get install -y --no-install-recommends tini && \
-    rm -rf /var/lib/apt/lists/*
+# tini for clean PID1; node exporter for system metrics
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    tini prometheus-node-exporter \
+ && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
 ENV PYTHONUNBUFFERED=1
 
-# Install Python deps first for better layer caching
+# deps first (better cache)
 COPY requirements.txt /app/
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Copy app source
+# app
 COPY . /app
 
-# Gradio will listen on this port inside the container
-EXPOSE 7860
+# Ports:
+# 7860 = Gradio UI, 8000 = Python /metrics, 9100 = Node Exporter
+EXPOSE 7860 8000 9100
 
-# Use tini as PID 1
 ENTRYPOINT ["/usr/bin/tini", "--"]
-
-# Run your local product (app.py already binds to 0.0.0.0:7860)
-CMD ["python", "app.py"]
+# Start Node Exporter in background, then your app
+CMD prometheus-node-exporter --web.listen-address=":9100" & python app.py
